@@ -1,0 +1,5 @@
+#keyword : new, template, smart pointer
+
+shared_ptr <-> reference , 차이는 동적 메모리의 해제 측면에서 (자동으로 해제)생각해볼 수 있음 
+(교수님께서, 동기화 부분에 대해서도 언급)
+
