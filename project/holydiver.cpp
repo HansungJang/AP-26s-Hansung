@@ -6,6 +6,31 @@
 */
 
 
+/*
+Task To Do [26.09.30.  ~ 26.10.07.]
+- Player class
+  - 기존 player struct -> private var  
+  - getter / setter 변수 주는 encapsulate 
+  - 위치 이동 함수
+  - 산소 감소 [새로운 함수] // oxyzenCalculator 함수
+  - 죽음 판별 [새로운 함수] // playerState 함수 
+
+- Enemy class 
+
+- World class 
+  - map 정보도 받아야함 
+  - start/quit routine 
+  - load_level, mapsize
+  - restart
+
+- ControlManager class
+  - player, world, enemy class받아야함 
+  - read_input, update_screen, render_screen  
+
+*/
+
+
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string>
