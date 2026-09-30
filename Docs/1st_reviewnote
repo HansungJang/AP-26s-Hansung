@@ -1,0 +1,152 @@
+# 1달간 배운거 review note 
+
+## 1주차 : pointer 와 dynamic memory concept 
+-> #malloc #pointer #datatype 
+
+## 2주차 : smart_pointer 와 array conecpt
+-> 직접 memory 핸들링하지 말고 자동으로 free 되는 concept
+
+## 3주차 : struct & Linked List 
+-> #Vector #List #struct 연관 데이터 뭉쳐서 관리하는 방법과 데이터 중간 삽입
+
+## 4주차 : OOP Overview 
+### #OOP가 뭐야? 
+-> 지금까지 기능 수행을 위해서 우리는 function() 을 독립적으로 선언해서 실행하는 방법 
+-> 문제는 *따로따로 정의하고 불러야 했음, 물론 struct를 이용해서 묶을 수 있었지 (= 원시적인 형태의 oop concept)
+-> 그런데, 해당 속성이 중복되는 하위 객체나 선언된 변수 혹은 함수의 공개범위, 함수의 기능 확장에는 직접 해당 객체를 받아야하는 한계가 있었음 
+-> OOP는 관련된 속성, 기능들을 모아줌과 동시에 *공개범위, *상속 특징을 통해서 해당 한계를 극복할 수 있는 문법
+-> 특정 함수/객체에 너무 많은 정보를 주지 않고, 특정 객체의 속성을 가져와서 사용할 수 있다는 장점이 생김 
+
+-> 중복되는 기능 선언이나 특징별로 기능을 모아서 관리하기 효과적이여서 사용하는 거임 
+
+크게 아래와 같은 특징이 있음 
+1) Encapsulation 
+2) abstraction 
+3) inheritance 
+4) polymorphism 
+5) ... constructor, virtual/override  
+
+-> Class & Object : 쿠키틀과 쿠키, 자동차 속성과 자동차 처럼 
+
+### #Class vs Object 
+-> class는 공통된 속성을 공유할 변수, 기능(=메서드)들의 집합으로 이루어진 설계도 
+-> Object는 class 속성을 가지고 생성된 객체, 객체가 인터렉션하는 거임 
+
+## [Question]
+### - abstraction / encapsulation 차이가 뭐지?
+:  결국 호출되는 대상에 불필요한 정보제공을 막고, 상대가 내부 구조를 알필요 없이 getter/setter로 특정 목적의 이름으로 제공한다는게 결국 
+abstraction 개념이 encapsulation의 개념을 포함하는 의미처럼 다가옴. 차이가 있는가? 
+
+### - inheritance 의 장점이 뭐지?  
+: struct에서도 앞서 정의한 struct의 내용을 element로 받을 수 있었음, 차이는 무엇일까? 메모리 차이인가? 
+만약 맞다면 reference concept이 적용되는 것인가? 
+
+## [Answer - chatGPT]
+[URL] https://chatgpt.com/share/6abcbb25-2120-83ed-bbe1-ed76972a0fe6
+
+### - abstraction / encapsulation 차이가 뭐지?
+-> 목적이 다름 
+abstraction : 정확한 내부 구조 몰라도 너가 필요한 기능 있으니까 이거 쓰셈 
+encapsulation : private / public -> 이건 너 쓰면 안됨/인건 써도됨 
+
+```
+class Car {
+public:
+    void start();
+    void accelerate(int speed); // abstraction : 어떻게 accelerate되는지 몰라도 해당 기능 실행
+    void stop();
+};
+
+```
+### - getter() / setter() 추상화일까? 
+
+```
+class Player {
+private: // encapsul
+    int hp = 100;
+
+public:
+    int getHp() const {
+        return hp;
+    }
+
+    void takeDamage(int damage) { // abstract
+        if (damage > 0)
+            hp -= damage;
+    }
+};
+```
+
+아래는 2개다 damage 연산을 하는 함수인데, absrtaction 관점에서 보면 
+hp자체 연산식을 알 필요없이 damage 값을 연산하는 하단 함수가 abstraction이 더 잘된 case 임. 
+
+```
+player.setHp(player.getHp() - 20);
+```
+
+```
+player.takeDamage(20);
+```
+
+### - inheritance 의 장점이 뭐지?  
+
+```
+struct Engine {
+    int power;
+};
+
+struct Car {
+    Engine engine;
+};
+```
+이건 inheritace가 아니라 composition(= 합성) 기능의 합성임
+
+```
+class Animal {
+public:
+    void eat() {}
+};
+
+class Dog : public Animal {
+public:
+    void bark() {}
+};
+```
+inheritance는 메모리가 아닌 object사이의 *관계와 타입 시스템* 
+
+*특징: Parent 속성으로 children 타입을 다룰 수 있음 (struct와 차이)*
+
+```
+class Enemy {
+public:
+    virtual void attack() {
+        cout << "Enemy attack";
+    }
+};
+
+class Zombie : public Enemy {
+public:
+    void attack() override {
+        cout << "Zombie bite";
+    }
+};
+
+class Skeleton : public Enemy {
+public:
+    void attack() override {
+        cout << "Skeleton shoots arrow";
+    }
+};
+
+Enemy* enemy;
+
+Zombie zombie;
+
+enemy = &zombie;
+enemy->attack(); // "enemy attack"이 출력됨 
+// [polymorphism concept; 여러 children type을 하나의 parent type으로 봄]
+// reference 연산이 가능한 것도 parant - child 관계로 인해서 가능한 연산, struct 만 보아도 명시적으로 element에 해당하는 datatype 안쓰면 casting error 발생함
+// (상위 parent 메서드가 호출, 상위 function이 우선, 만약 그게 아니라면 override로 덥어씌우면 됨)
+
+
+```
