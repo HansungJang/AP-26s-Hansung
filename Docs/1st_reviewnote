@@ -146,7 +146,7 @@ enemy = &zombie;
 enemy->attack(); // "enemy attack"이 출력됨 
 // [polymorphism concept; 여러 children type을 하나의 parent type으로 봄]
 // reference 연산이 가능한 것도 parant - child 관계로 인해서 가능한 연산, struct 만 보아도 명시적으로 element에 해당하는 datatype 안쓰면 casting error 발생함
-// (상위 parent 메서드가 호출, 상위 function이 우선, 만약 그게 아니라면 override로 덥어씌우면 됨)
+// (상위 parent 메서드가 호출, 상위 function이 우선, 만약 그게 아니라면 virtual/override로 덥어씌우면 됨)
 
 
 ```
