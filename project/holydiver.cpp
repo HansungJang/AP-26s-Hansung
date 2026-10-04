@@ -276,6 +276,7 @@ class World
 		char** map;
 		int mapSize;
 		Player player_data;
+		bool isRestart; 
 		// Enemy enemies_data[];  
 		// Item items_data[];
 
@@ -302,7 +303,7 @@ class World
 		}
 
 	public:
-		World(string file = "Map.txt") : player_data(MAX_HEALTH, MAX_OXYGEN, INIT_LIVES), mapSize(0), map(nullptr)
+		World(string file = "Map.txt") : player_data(MAX_HEALTH, MAX_OXYGEN, INIT_LIVES), mapSize(0), map(nullptr), isRestart(false)
 		{
 			start_splash_screen(); 
 			load_level(file); 
@@ -341,10 +342,11 @@ class World
 				if(character == '\r') continue; 
 				if(character == '\0' || character == '\n')
 				{
-					if(currLength == 0 && mapSize == 0)
+					if((currLength == 0 && mapSize == 0) || isRestart)
 					{
 						mapSize = curr_charater_size; 
 						map = new char*[mapSize]; 
+						isRestart = false; 
 					}
 					// 에러 처리 
 
@@ -407,9 +409,10 @@ class World
 			char input; 
 			cout << "Are You Sure want to Restart ? [y / n] :  "; 
 			cin >> input; 
-			cin.ignore();
+		
 			if(input == 'n' || input == 'N') return; 
-
+			isRestart = true; 
+			cin.ignore();
 			mapDelete();
 			load_level(file); 
 		}
@@ -475,7 +478,10 @@ class ControlManager
 		bool playingState; 
 
 	public : 
-		ControlManager(string filename) : game(filename), file(filename), playingState(true){};
+		ControlManager(string filename) : game(filename), file(filename), playingState(true)
+		{
+			game.render_screen(); 
+		};
 
 		void read_input()
 		{
@@ -564,7 +570,7 @@ int main (void)
 	// quit_routines(); // cleanup, bye-bye messages, game save and whatnot
 	// return 0;
 
-	string filepath = "Map.txt"; 
+	string filepath = "Map2.txt"; 
 	ControlManager controller(filepath); 
 
 	while(true)
