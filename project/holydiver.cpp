@@ -191,7 +191,7 @@ class Player
 	private:
 		int health;
 		int oxygen;
-		int lives; 
+		int lives; // 필요없으면 hp로 
 		int poitionX;
 		int poitionY;
 		bool isAlive; // player state alive or dead
@@ -208,41 +208,35 @@ class Player
 
 		void oxyzenCalculator(int oxy = -1) // calculate oxygen level
 		{
-			if(oxygen > MAX_OXYGEN) 
+			int nextOxygen = oxygen + oxy; 
+			if(nextOxygen >= MAX_OXYGEN) 
 			{
-				oxygen = MAX_OXYGEN;
-				return; 
+				nextOxygen = MAX_OXYGEN;
 			}
-			if(oxygen <= 0)
+			if(nextOxygen <= 0)
 			{
-				livesCalculator();
-				oxygen = MAX_OXYGEN; // reset oxygen to max after losing a life
-				return; 
+				nextOxygen = 0; // reset oxygen to max after losing a life
 			} 
-			oxygen += oxy; // decrease oxygen by default, if not specified
-
+				
+			oxygen = nextOxygen; 
+	
+			
+			return; 
 		}
 
 		void healthCalculator(int hp) // calculate health level (time based)
 		{
-			health += hp;
-			if(health > MAX_HEALTH) health = MAX_HEALTH;
-			if(health <= 0)
+			int nextHealth = health + hp;
+			if(nextHealth >= MAX_HEALTH) nextHealth = MAX_HEALTH;
+			if(nextHealth <= 0)
 			{
-				livesCalculator(); 
-				health = MAX_HEALTH; // reset health to max after losing a life
+				nextHealth = 0; // reset health to max after losing a life
 			} 	
-		}
 
-		void livesCalculator(void) // calculate lives
-		{
-			lives -= 1;
-			if(lives <= 0) 
-			{
-				lives = 0;
-				playerStateChange(); 
-			}
+			health = nextHealth; 
+			return; 
 		}
+ 
 
 		void takeDamage(int damage) // calculate player health when attacked
 		{
@@ -251,20 +245,26 @@ class Player
 
 		void playerStateChange() // check player state; isAlive & health & oxygen
 		{
-			isAlive = (lives > 0);
+			isAlive = !(health <= 0 || oxygen <= 0);
+		}
+
+		void playerReset()
+		{
+			health = MAX_HEALTH; 
+			oxygen = MAX_OXYGEN; 
+			setPositionX(0); 
+			setPositionY(0); 
 		}
 
 		// setter / getter functions: health, oxygen, lives, poitionX, poitionY, isAlive	
 		int getHealth(){ return health; }
 		int getOxygen() {return oxygen; }
-		int getLives() { return lives; }
-		int getPositionX() { return poitionX; }
+ 		int getPositionX() { return poitionX; }
 		int getPositionY() { return poitionY; }
 		bool getIsAlive() { return isAlive; }
 		
 		void setHealth(int hp) { health = hp; }
 		void setOxygen(int oxy) { oxygen = oxy; }
-		void setLives(int live) { lives = live; }
 		void setPositionX(int x) { poitionX = x; }
 		void setPositionY(int y) { poitionY = y; }		
 };
@@ -295,10 +295,26 @@ class World
 
 		bool checkPosition(int next_x, int next_y)
 		{
+			if(map == nullptr) // check map
+			{
+				cout <<  "Current map is not loaded ... " << endl; 
+				return false;  
+			}
+			
+			if(next_x < 0 || next_x >= mapSize // check position bound 
+				|| next_y < 0 || next_y >= mapSize)
+				{
+					cout << "Position is Out of Bound ... " << endl;
+					return false; 
+				} 
+  			
 			bool canMove = false; 
-			if(map[next_y][next_x] == 'o' || map[next_y][next_x] == 'O') canMove = true; 
-			if(map[next_y][next_x] == 'x' || map[next_y][next_x] == 'X') canMove = false; 
-			// if enemy 충돌 -> damage 연산
+
+				if(map[next_y][next_x] == 'o' || map[next_y][next_x] == 'O') canMove = true; 
+				if(map[next_y][next_x] == 'x' || map[next_y][next_x] == 'X') canMove = false; 
+				// if 장애물 접촉 -> 넘어가는 연산 호출
+				// if enemy 충돌 -> damage 연산 호출
+
 			return canMove; 
 		}
 
@@ -404,7 +420,7 @@ class World
 			map = nullptr; 
 		}
 
-		void mapReset(string file)
+		void gameReset(string file)
 		{
 			char input; 
 			cout << "Are You Sure want to Restart ? [y / n] :  "; 
@@ -414,6 +430,8 @@ class World
 			isRestart = true; 
 			cin.ignore();
 			mapDelete();
+			
+			player_data.playerReset();
 			load_level(file); 
 		}
 
@@ -451,8 +469,9 @@ class World
 			int next_y = curr_y + input_y; 
 
 			bool checkPlayerMove = checkPosition(next_x, next_y); 
+			bool checkPlayerState = player_data.getIsAlive(); 
 
-			if(checkPlayerMove) 
+			if(checkPlayerMove && checkPlayerState) 
 			{
 				swap(map[curr_y][curr_x], map[next_y][next_x]); 
 				player_data.setPositionX(next_x); 
@@ -465,6 +484,7 @@ class World
 		}
 
 		int getMapSize() { return mapSize; }
+		bool getPlayerCurrentState() {return player_data.getIsAlive();}
 		
 
 };
@@ -500,10 +520,19 @@ class ControlManager
 
 			if(input == 'q' || input =='Q') end(); 
 			if(input == 'r' || input == 'R') restart(); 
-			if(input == 'w' || input =='W') playerMove(0, -1); 
-			if(input == 'a' || input =='A') playerMove(-1, 0); 
-			if(input == 's' || input =='S') playerMove(0, 1); 
-			if(input == 'd' || input =='D') playerMove(1, 0); 
+
+			if(game.getPlayerCurrentState()) // player가 살아있는 상태에서만 입력 받음
+			{
+				// player move 
+				if(input == 'w' || input =='W') playerMove(0, -1); 
+				if(input == 'a' || input =='A') playerMove(-1, 0); 
+				if(input == 's' || input =='S') playerMove(0, 1); 
+				if(input == 'd' || input =='D') playerMove(1, 0); 
+
+				// player light 
+
+			}
+
 
 		} 
 		
@@ -522,7 +551,7 @@ class ControlManager
 			cout << "Game Restart" << endl; 
 			cout << endl; 
 
-			game.mapReset(file); 
+			game.gameReset(file); 
 		}
 
 		void end()
