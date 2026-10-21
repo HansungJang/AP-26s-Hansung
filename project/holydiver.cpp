@@ -599,7 +599,7 @@ int main (void)
 	// quit_routines(); // cleanup, bye-bye messages, game save and whatnot
 	// return 0;
 
-	string filepath = "Map.txt"; 
+	string filepath = "Map2.txt"; 
 	cout << "Insert File path (defalut : Map.txt): "; 
 	getline(cin, filepath); 
 	ControlManager controller(filepath); 
