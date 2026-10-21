@@ -430,7 +430,7 @@ class World
 			isRestart = true; 
 			cin.ignore();
 			mapDelete();
-			
+
 			player_data.playerReset();
 			load_level(file); 
 		}
@@ -599,7 +599,9 @@ int main (void)
 	// quit_routines(); // cleanup, bye-bye messages, game save and whatnot
 	// return 0;
 
-	string filepath = "Map2.txt"; 
+	string filepath = "Map.txt"; 
+	cout << "Insert File path (defalut : Map.txt): "; 
+	getline(cin, filepath); 
 	ControlManager controller(filepath); 
 
 	while(true)
