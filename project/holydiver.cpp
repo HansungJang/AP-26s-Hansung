@@ -220,7 +220,7 @@ class Player
 				
 			oxygen = nextOxygen; 
 	
-			
+			playerStateChange(); 
 			return; 
 		}
 
@@ -234,6 +234,7 @@ class Player
 			} 	
 
 			health = nextHealth; 
+			playerStateChange(); 
 			return; 
 		}
  
@@ -254,6 +255,7 @@ class Player
 			oxygen = MAX_OXYGEN; 
 			setPositionX(0); 
 			setPositionY(0); 
+			playerStateChange(); 
 		}
 
 		// setter / getter functions: health, oxygen, lives, poitionX, poitionY, isAlive	
@@ -277,6 +279,8 @@ class World
 		int mapSize;
 		Player player_data;
 		bool isRestart; 
+		string filepath; 
+
 		// Enemy enemies_data[];  
 		// Item items_data[];
 
@@ -322,7 +326,8 @@ class World
 		World(string file = "Map.txt") : player_data(MAX_HEALTH, MAX_OXYGEN, INIT_LIVES), mapSize(0), map(nullptr), isRestart(false)
 		{
 			start_splash_screen(); 
-			load_level(file); 
+			this->filepath = file; 
+			load_level(); 
 		}
 		
 		void start_splash_screen(void) 
@@ -333,11 +338,11 @@ class World
 			cin.ignore();
 		}
 
-		void load_level(string filepath) // a routine to load a level map from a file
+		void load_level() // a routine to load a level map from a file
 		{
 			// Implementation for loading level
 			FILE* file = NULL;
-			const char* filename = filepath.c_str(); 
+			const char* filename = this->filepath.c_str(); 
 			int currLength = 0; 
 			int character; 
 
@@ -418,9 +423,19 @@ class World
 
 			delete[] map; 
 			map = nullptr; 
+			mapSize = 0; 
 		}
 
-		void gameReset(string file)
+		void retrial()
+		{
+			// if(live <= 0) 게임 오버 
+			
+			// lives -= 1; 
+
+			// player_status, map 요소만 다시 reset 
+		}
+
+		void gameReset()
 		{
 			char input; 
 			cout << "Are You Sure want to Restart ? [y / n] :  "; 
@@ -432,7 +447,7 @@ class World
 			mapDelete();
 
 			player_data.playerReset();
-			load_level(file); 
+			load_level(); 
 		}
 
 		void render_screen(void)
@@ -457,6 +472,10 @@ class World
 				cout << endl; 
 			}
 			cout << endl; 
+			cout << "*******  PLAYER STATUS *******" << endl;
+			cout << "Health : " << player_data.getHealth() << ", " << "Oxygen : " << player_data.getOxygen() << endl; 
+			// player lives 는 나중에 추가 (아마 game over 횟수에 들어가겠지)
+
 		}
 
 
@@ -471,12 +490,16 @@ class World
 			bool checkPlayerMove = checkPosition(next_x, next_y); 
 			bool checkPlayerState = player_data.getIsAlive(); 
 
+			player_data.oxyzenCalculator();
+			
 			if(checkPlayerMove && checkPlayerState) 
 			{
 				swap(map[curr_y][curr_x], map[next_y][next_x]); 
+				auto mapcompoent = map[next_y][next_x]; 
+
 				player_data.setPositionX(next_x); 
 				player_data.setPositionY(next_y);
-				player_data.oxyzenCalculator();  
+	  
 				// player_data.oxygen *= 0.98; Oxygen decrease when player move
 			}
 
@@ -551,7 +574,7 @@ class ControlManager
 			cout << "Game Restart" << endl; 
 			cout << endl; 
 
-			game.gameReset(file); 
+			game.gameReset(); 
 		}
 
 		void end()
@@ -600,7 +623,7 @@ int main (void)
 	// return 0;
 
 	string filepath = "Map2.txt"; 
-	cout << "Insert File path (defalut : Map.txt): "; 
+	cout << "Insert File path (defalut : Map2.txt): "; 
 	getline(cin, filepath); 
 	ControlManager controller(filepath); 
 
