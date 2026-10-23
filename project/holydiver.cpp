@@ -11,6 +11,7 @@
 #include <iostream>
 
 using namespace std;
+#include <vector>
 
 /****************************************************/
 // declaring functions:
@@ -292,6 +293,8 @@ class Enemy
 		virtual void setpositiony(int y) {positionY = y;};
 		virtual void setDamage(int dg) {damage = dg;}; 
 
+		virtual ~Enemy() = default;
+
 };
 
 class _MoveableEnemy : public Enemy
@@ -376,9 +379,8 @@ class World
 		int mapSize;
 		int DEFAULTDAMAGE = 10; 
 		Player player_data;
-		unique_ptr<Enemy*> enemyContainer; 
-		_MoveableEnemy moveEnemy; // "M"
-		_FixedEnemy fixedEnemy; // "m"
+		vector<unique_ptr<Enemy>> enemyContainer; 
+
 
 		bool isRestart; 
 		string filepath; 
@@ -397,14 +399,12 @@ class World
 			// enemies 
 			if(character == 'M') // movable
 			{
-					moveEnemy.setpositionX(x); // 0부터 시작함으로
-					moveEnemy.setpositiony(y);
+					enemyContainer.push_back(make_unique<_MoveableEnemy>(DEFAULTDAMAGE, x, y));
 			}
 
 			if(character == 'm') // fixed
 			{
-					fixedEnemy.setpositionX(x); // 0부터 시작함으로
-					fixedEnemy.setpositiony(y);
+					enemyContainer.push_back(make_unique<_FixedEnemy>(DEFAULTDAMAGE, x, y));
 			}
 
 
@@ -439,9 +439,10 @@ class World
 		}
 
 	public:
-		World(string file) : player_data(MAX_HEALTH, MAX_OXYGEN, INIT_LIVES), mapSize(0), map(nullptr), isRestart(false), moveEnemy(DEFAULTDAMAGE, 0, 0), fixedEnemy(DEFAULTDAMAGE, 0, 0)
+		World(string file) : player_data(MAX_HEALTH, MAX_OXYGEN, INIT_LIVES), mapSize(0), map(nullptr), isRestart(false)
 		{
 			start_splash_screen(); 
+			enemyContainer.clear(); 
 			this->filepath = file; 
 			load_level(); 
 		}
@@ -572,6 +573,7 @@ class World
 			cin.ignore();
 			mapDelete();
 
+			enemyContainer.clear(); 
 			player_data.playerReset();
 			load_level(); 
 		}
@@ -630,6 +632,34 @@ class World
 			}
 
 			return; 
+		}
+
+
+		void enemyMove()
+		{
+			for(const auto& enemy : enemyContainer)
+			{
+				if(typeid<enemy> == _MoveableEnemy) 
+				{
+					int nextdir = enemy.randomDirection(); 
+					enemy.nextPos(nextdir); 
+					if(checkPosition(enemy.getNextpositionX(), enemy.getNextpositionY()))
+					{
+						enemy.move(); 
+					}
+				}
+
+			}
+		}
+
+		void checkCollideEnemy()
+		{
+			for(const auto& enemy : enemyContainer)
+			{
+				if(player_data.getPositionX() == enemy.getNextpositionX() && 
+				   player_data.getPositionY() == enemy.getNextpositionY())
+				   {player_data.takeDamage(enemy.givedamage());}
+			}
 		}
 
 		int getMapSize() { return mapSize; }
@@ -692,6 +722,8 @@ class ControlManager
 
 		void stateUpdate()
 		{
+			game.enemyMove(); 
+			game.checkCollideEnemy(); 
 			game.render_screen(); 
 		} 
 
