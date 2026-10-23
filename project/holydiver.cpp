@@ -11,7 +11,11 @@
 #include <iostream>
 
 using namespace std;
+
 #include <vector>
+#include <memory>
+#include <algorithm>
+#include <ctime>
 
 /****************************************************/
 // declaring functions:
@@ -297,55 +301,35 @@ class Enemy
 
 };
 
-class _MoveableEnemy : public Enemy
+class MoveableEnemy : public Enemy
 {
 	private : 
 		int nextPosX; 
 		int nextPosY; 
 	public :
-	_MoveableEnemy (int dg, int x, int y) 
+	MoveableEnemy (int dg, int x, int y) 
 	{
 		this->setDamage(dg); 
 		this->setpositionX(x); 
 		this->setpositiony(y); 
-		nextPosX= 0; 
-		nextPosY= 0; 
+		nextPosX= x; 
+		nextPosY= y; 
 	}; 
 
 
 	int randomDirection(){return rand() %4; }; // 0~3 시간별 임의값 random [0: u, 1: l, 2: d, 3: r],  time 단위 update 
 	void nextPos(int nextDir)
 	{
-		switch(nextDir) 
+		nextPosX = getPositionX();
+		nextPosY = getPositiony();
+
+		switch (nextDir)
 		{
-			case 0 :
-				{
-					nextPosY = this->getnextPosy() - 1; 
-					nextPosX = this->getnextPosx();
-				}
-				break; 
-			case 1 :
-				{
-					nextPosY = this->getnextPosy(); 
-					nextPosX = this->getnextPosx() -1 ;
-				}
-				break; 
-			case 2 :
-				{
-					nextPosY = this->getnextPosy() + 1; 
-					nextPosX = this->getnextPosx();
-				}
-				break; 
-			case 3 :
-				{
-					nextPosY = this->getnextPosy(); 
-					nextPosX = this->getnextPosx() + 1;
-				}
-				break; 			
-			// else 
-			nextPosY = this->getnextPosy(); 
-			nextPosX = this->getnextPosx();
-			break; 
+			case 0: --nextPosY; break; // 위
+			case 1: --nextPosX; break; // 왼쪽
+			case 2: ++nextPosY; break; // 아래
+			case 3: ++nextPosX; break; // 오른쪽
+			default: break;
 		}
 	};  // randomDirection() 실행 방향 current position에 연산, next좌표 만듬
 	void move()
@@ -361,10 +345,10 @@ class _MoveableEnemy : public Enemy
 
 
 
-class _FixedEnemy : public Enemy 
+class FixedEnemy : public Enemy 
 {
 	public :
-	_FixedEnemy (int dg, int x, int y) 
+	FixedEnemy (int dg, int x, int y) 
 	{
 		this->setDamage(dg); 
 		this->setpositionX(x); 
@@ -399,12 +383,12 @@ class World
 			// enemies 
 			if(character == 'M') // movable
 			{
-					enemyContainer.push_back(make_unique<_MoveableEnemy>(DEFAULTDAMAGE, x, y));
+					enemyContainer.push_back(make_unique<MoveableEnemy>(DEFAULTDAMAGE, x, y));
 			}
 
 			if(character == 'm') // fixed
 			{
-					enemyContainer.push_back(make_unique<_FixedEnemy>(DEFAULTDAMAGE, x, y));
+					enemyContainer.push_back(make_unique<FixedEnemy>(DEFAULTDAMAGE, x, y));
 			}
 
 
@@ -432,8 +416,6 @@ class World
 				if(map[next_y][next_x] == 'o' || map[next_y][next_x] == 'O') canMove = true; 
 				if(map[next_y][next_x] == 'x' || map[next_y][next_x] == 'X') canMove = false; 
 				// if 장애물 접촉 -> 넘어가는 연산 호출 (좌표 겹침) 
-
-				// if enemy 충돌 -> damage 연산 호출
 
 			return canMove; 
 		}
@@ -621,6 +603,13 @@ class World
 
 			player_data.oxyzenCalculator();
 			checkPlayerState = player_data.getIsAlive();
+
+			// if enemy 충돌 -> damage 연산 호출 (player가 이동한 경우)
+			if(map[next_y][next_x] == 'm' || map[next_y][next_x] == 'M') 
+			{
+				player_data.takeDamage(findDamage(next_x, next_y)); 
+			}
+
 			if(checkPlayerMove && checkPlayerState) 
 			{
 				swap(map[curr_y][curr_x], map[next_y][next_x]); 
@@ -637,29 +626,90 @@ class World
 
 		void enemyMove()
 		{
+			// exception handle 
+			if(map == nullptr || !player_data.getIsAlive()) return; 
+
 			for(const auto& enemy : enemyContainer)
 			{
-				if(typeid<enemy> == _MoveableEnemy) 
-				{
-					int nextdir = enemy.randomDirection(); 
-					enemy.nextPos(nextdir); 
-					if(checkPosition(enemy.getNextpositionX(), enemy.getNextpositionY()))
-					{
-						enemy.move(); 
-					}
-				}
+				auto* movingEnemy = dynamic_cast<MoveableEnemy*>(enemy.get()); // type identify 
+				const int oldX = movingEnemy->getnextPosx(); 
+				const int oldY = movingEnemy->getnextPosy(); 
+				int nextX = movingEnemy->getnextPosx(); 
+				int nextY = movingEnemy->getnextPosy(); 
+				int playerX = player_data.getPositionX(); 
+				int playerY = player_data.getPositionY();
+
+				if(movingEnemy == nullptr) continue;  
+				
+				
+				int nextdir = movingEnemy->randomDirection(); 
+				movingEnemy->nextPos(nextdir); 
+				// player와 충돌여부 
+				if(checkCollideEnemy(playerX, playerY, nextX, nextY))
+				   {
+						player_data.takeDamage(movingEnemy->givedamage());
+						continue;
+				   }
+
+				// 이동가능 여부 
+				if(!checkPosition(nextX, nextY)) continue; 
+
+				swap(map[oldY][oldX], map[nextY][nextX]); 
+				movingEnemy->move(); 
 
 			}
 		}
 
-		void checkCollideEnemy()
+		int findDamage(int x, int y)
 		{
+			int damage = 0;
 			for(const auto& enemy : enemyContainer)
 			{
-				if(player_data.getPositionX() == enemy.getNextpositionX() && 
-				   player_data.getPositionY() == enemy.getNextpositionY())
-				   {player_data.takeDamage(enemy.givedamage());}
+				int enemyPosX = enemy->getPositionX();
+				int enemyPosY = enemy->getPositiony();
+
+				if(x == enemyPosX && y == enemyPosY) 
+				{
+					damage = enemy->givedamage();
+				}
+				break; 
 			}
+			return damage;  
+		}
+
+		bool checkCollideEnemy(int playerX, int playerY, int enemyX, int enemyY)
+		{
+			bool collide = false; 
+
+			if(playerX == enemyX && playerY == enemyY) collide = true; 
+
+			// for(const auto& enemy : enemyContainer)
+			// {
+			// 	auto* movingEnemy = dynamic_cast<MoveableEnemy*>(enemy.get()); // type identify 
+			// 	auto* fixedEnemy = dynamic_cast<FixedEnemy*>(enemy.get()); // type identify 				
+			// 	if(movingEnemy != nullptr)
+			// 	{
+			// 		if(player_data.getPositionX() == movingEnemy->getnextPosx() && 
+			// 		player_data.getPositionY() == movingEnemy->getnextPosy())
+			// 		{
+			// 			collide = true; 
+			// 			player_data.takeDamage(movingEnemy->givedamage());
+			// 		}
+			// 	} 
+
+			// 	if(fixedEnemy != nullptr)
+			// 	{
+			// 		if(player_data.getPositionX() == fixedEnemy->getPositionX() && 
+			// 		player_data.getPositionY() == fixedEnemy->getPositiony())
+			// 		{
+			// 			collide = true; 
+			// 			player_data.takeDamage(fixedEnemy->givedamage());
+			// 		}					
+			// 	}
+
+			// }
+
+			return collide; 
 		}
 
 		int getMapSize() { return mapSize; }
@@ -723,7 +773,6 @@ class ControlManager
 		void stateUpdate()
 		{
 			game.enemyMove(); 
-			game.checkCollideEnemy(); 
 			game.render_screen(); 
 		} 
 
