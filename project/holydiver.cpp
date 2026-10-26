@@ -47,7 +47,7 @@ using namespace std;
 			// However pointer to pointer has not allocated memory yet attached to it, this is done dynamically when actual size known
 
 const int MAX_HEALTH = 100;
-const int MAX_OXYGEN = 5;
+const int MAX_OXYGEN = 100; // 5
 const int INIT_LIVES = 3;
 
 
@@ -632,18 +632,19 @@ class World
 			for(const auto& enemy : enemyContainer)
 			{
 				auto* movingEnemy = dynamic_cast<MoveableEnemy*>(enemy.get()); // type identify 
-				const int oldX = movingEnemy->getnextPosx(); 
-				const int oldY = movingEnemy->getnextPosy(); 
+				if(movingEnemy == nullptr) continue; 
+
+				int nextdir = movingEnemy->randomDirection(); 
+				movingEnemy->nextPos(nextdir); 
+
+				const int oldX = movingEnemy->getPositionX(); 
+				const int oldY = movingEnemy->getPositiony(); 
 				int nextX = movingEnemy->getnextPosx(); 
 				int nextY = movingEnemy->getnextPosy(); 
 				int playerX = player_data.getPositionX(); 
 				int playerY = player_data.getPositionY();
-
-				if(movingEnemy == nullptr) continue;  
 				
-				
-				int nextdir = movingEnemy->randomDirection(); 
-				movingEnemy->nextPos(nextdir); 
+			
 				// player와 충돌여부 
 				if(checkCollideEnemy(playerX, playerY, nextX, nextY))
 				   {
