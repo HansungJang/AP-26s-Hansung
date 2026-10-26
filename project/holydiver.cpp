@@ -70,125 +70,53 @@ const int INIT_LIVES = 3;
  ****************************************************/
 
 /*
-Task To Do [26.09.30.  ~ 26.10.07.]
+Task To Do  [~27.10.2026.]
 
-- Player class
-  - 기존 player struct -> private var  
-  - getter / setter 변수 주는 encapsulate 
-  - 산소 감소 [새로운 함수] // oxyzenCalculator 함수
-  - 죽음 판별 [새로운 함수] // playerState 함수 
-  - move, attack, takeDamage, die, state, skill, item 
+player 
+ - 보이는 좌표 크기 좌표 연산 
+ - container 가지고 있어야함 
+ - vision count변수 크기 가지고 있어야함
 
-	[variables]
-	int health;
-	int oxygen;
-	int lives; 
-	int poitionX;
-	int poitionY;
-	bool isAlive; // player state alive or dead
-    
-	[functions]
-	constructor : initialize player data
-	void poitionUpdate(int, int) : update player position
-	void oxyzenCalculator(int) : calculate oxygen level
-	void healthCalculator(int) : calculate health level (time based)
-	void takeDamage(int) : calculate player health when attacked
-	bool playerState() : check player state; isAlive & health & oxygen
+ world 
+  - vision map 초기화 
+  - vision map의 위치 유효성 검사 및 좌표 저장 
+  - vision map render시 player vision map 그리도록 수정 
 
-	setter / getter functions: health, oxygen, lives, poitionX, poitionY, isAlive
+controlmanager
+ - 입력 (i,j,k,l) -> world의 연산 호출
+		
+	#scan 하는 함수 
 
-    //
+		i,j,k,l 입력 
+		>> 보이는 범위 크기 8 (8방향 연산) 
+			default size : 1 (추후 업그레이드, 우선 size : 1)	
+		
+			초기화 : 
+			- container생성 및 초기화 (map 만들때 그만큼 크기, 단 contents player 포지션, 1만큼만 저장, 나머지 ' ' 값을 넣음)
+			
+			좌표 유효성 검사 : 
+			continue 넘길 요소
+			- 해당 좌표 index < 0  || index >= mapsize
+			- 기존 맵에서 존재하는 좌표인가 && 이미 container에 존재하는 좌표인가
 
-- Enemy class 
-  - move, attack, takeDamage, die, state
+			유효성 통과 -> 해당 좌표 배열에 map의 값 넣음 
 
-	[variables]
-	int damage;
-	int lives; 
-	int poitionX;
-	int poitionY;
-	bool isAlive; // enemy state alive or dead
-
-	[functions]
-	constructor : initialize enemy data
-	void poitionUpdate(int, int) : update enemy position
-    void takeDamage(int) : calculate enemy health when attacked
-	bool enemyState() : check enemy state; isAlive & health & oxygen
-
-	setter / getter functions: health, oxygen, lives, poitionX, poitionY, isAlive
-
-- Item class 
-  - item type, item name, item effect, item state
-  - useItem, pickUpItem, dropItem
-
-- World class :  player, Enemy, Item
-  - map 정보도 받아야함 
-  - start/quit routine 
-  - load_level, mapsize
-  - restart
-
-  - player, world, enemy class받아야함 
-
-
-  	[variables]
-	char** map 
-	int mapSize
-
-	class Player player_data
-	class Enemy enemies_data[]
-	class Item items_data[]
-
-	[functions]
-	void start_splash_screen(void);
-	void load_level(string); // a routine to load a level map from a file
-	void mapDelete();
-	int mapSize();
-
-	checkInitialPosition; // check player, enemies, items initial position in map
-
-	player :
-	    - playerData
-	    - playerPosition
-	enemy :
-	    - enemyPosition
-	item :
-	    - itemPosition
-	
-
-- ControlManager class : World <- User input 받아서 각 클래스에 전달하는 역할
-
-  - read_input, update_screen, render_screen  
-  - takeDamage, attack 
-
-	[variables]
-	const int MAX_HEALTH = 100;
-	const int MAX_OXYGEN = 100;
-	const int INIT_LIVES = 3;
-	int positionX;
-	int positionY;
-
-	class World world_data
-
-	[functions]
-	#load : constructor level 
-	world : 
-	    - start_splash_screen()
-		- startup_routines()
-		- load_level(string)
-
-	#controler 
-	int read_input(char *);
-	
-	#update 
-	void startup_routines(void);
-	void quit_routines(void);
-	void mapReset();
-
-	void update_state(char);  // assuming only one input char (key press) at most at a time ("turn-based" execution flow)
-	void render_screen(void);
-
-	void move(int, int);
-	int checkPosition(int, int);
+			scan 사용횟수 -=1; 
+			모두 그려졌으면 render함수 trigger되어야함
+		
+ 			(-1, 0)
+				(-1, -1) 
+			(0, -1)
+				(1, -1) 
+			(1, 0)
+				(1, 1) 
+			(0, 1)
+				(-1, 1) 
+		
+		>> 시작위치 (x, y)
+		>> 보이는 tile (중복저장하지 않고 담아야함)
+		>> 한번 움직일 때마다 oxygen 처럼 사용횟수 감소시켜야함
+ 
 */
 
 
@@ -201,6 +129,8 @@ class Player
 		int poitionX;
 		int poitionY;
 		bool isAlive; // player state alive or dead
+
+
 	public:
 		Player(int hp, int oxy, int live, int x=0, int y=0) // constructor : initialize player data
 		: health(hp), oxygen(oxy), lives(live), poitionX(x), poitionY(y), isAlive(true){}
@@ -275,7 +205,9 @@ class Player
 		void setOxygen(int oxy) { oxygen = oxy; }
 		void setPositionX(int x) { poitionX = x; }
 		void setPositionY(int y) { poitionY = y; }		
-};
+
+
+	};
 
 class Enemy 
 {
@@ -535,14 +467,14 @@ class World
 			mapSize = 0; 
 		}
 
-		void retrial()
-		{
-			// if(live <= 0) 게임 오버 
+		// void retrial()
+		// {
+		// 	// if(live <= 0) 게임 오버 
 
-			// lives -= 1; 
+		// 	// lives -= 1; 
 
-			// player_status, map 요소만 다시 reset 
-		}
+		// 	// player_status, map 요소만 다시 reset 
+		// }
 
 		void gameReset()
 		{
@@ -572,7 +504,7 @@ class World
 				return; 
 			}
 
-			// 맵 그리기 
+			// 맵 그리기 (다른 맵으로 교체해야 함)
 			for(int y=0; y < mapSize; y++)
 			{
 				for(int x =0; x < mapSize; x++)
@@ -617,7 +549,6 @@ class World
 				player_data.setPositionX(next_x); 
 				player_data.setPositionY(next_y);
 	  
-				// player_data.oxygen *= 0.98; Oxygen decrease when player move
 			}
 
 			return; 
@@ -683,32 +614,6 @@ class World
 			bool collide = false; 
 
 			if(playerX == enemyX && playerY == enemyY) collide = true; 
-
-			// for(const auto& enemy : enemyContainer)
-			// {
-			// 	auto* movingEnemy = dynamic_cast<MoveableEnemy*>(enemy.get()); // type identify 
-			// 	auto* fixedEnemy = dynamic_cast<FixedEnemy*>(enemy.get()); // type identify 				
-			// 	if(movingEnemy != nullptr)
-			// 	{
-			// 		if(player_data.getPositionX() == movingEnemy->getnextPosx() && 
-			// 		player_data.getPositionY() == movingEnemy->getnextPosy())
-			// 		{
-			// 			collide = true; 
-			// 			player_data.takeDamage(movingEnemy->givedamage());
-			// 		}
-			// 	} 
-
-			// 	if(fixedEnemy != nullptr)
-			// 	{
-			// 		if(player_data.getPositionX() == fixedEnemy->getPositionX() && 
-			// 		player_data.getPositionY() == fixedEnemy->getPositiony())
-			// 		{
-			// 			collide = true; 
-			// 			player_data.takeDamage(fixedEnemy->givedamage());
-			// 		}					
-			// 	}
-
-			// }
 
 			return collide; 
 		}
