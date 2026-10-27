@@ -55,8 +55,8 @@ const int INIT_LIVES = 3;
 //   int health;
 //   int oxygen;
 //   int lives; 
-//   int poitionX;
-//   int poitionY;
+//   int positionX;
+//   int positionY;
 // } Player; // named as "Player", a struct containing relevant player data is declared
 
 // Player player_data = {MAX_HEALTH, MAX_OXYGEN, INIT_LIVES, 0, 0}; // initialize player data
@@ -82,7 +82,7 @@ player
   - vision map의 위치 유효성 검사 및 좌표 저장 
   - vision map render시 player vision map 그리도록 수정 
 
-controlmanager
+control manager
  - 입력 (i,j,k,l) -> world의 연산 호출
 		
 	#scan 하는 함수 
@@ -126,21 +126,18 @@ class Player
 		int health;
 		int oxygen;
 		int lives; // 필요없으면 hp로 
-		int poitionX;
-		int poitionY;
+		int positionX;
+		int positionY;
+		int lighPositionX;
+		int lightPositionY;
 		bool isAlive; // player state alive or dead
+
 
 
 	public:
 		Player(int hp, int oxy, int live, int x=0, int y=0) // constructor : initialize player data
-		: health(hp), oxygen(oxy), lives(live), poitionX(x), poitionY(y), isAlive(true){}
+		: health(hp), oxygen(oxy), lives(live), positionX(x), positionY(y), lighPositionX(0), lightPositionY(0), isAlive(true){}
 		
-		
-		void poitionUpdate(int x, int y) // update player position
-		{
-			poitionX = x;
-			poitionY = y;
-		}
 
 		void oxyzenCalculator(int oxy = -1) // calculate oxygen level
 		{
@@ -194,18 +191,21 @@ class Player
 			playerStateChange(); 
 		}
 
-		// setter / getter functions: health, oxygen, lives, poitionX, poitionY, isAlive	
+		// setter / getter functions: health, oxygen, lives, positionX, positionY, isAlive	
 		int getHealth(){ return health; }
 		int getOxygen() {return oxygen; }
- 		int getPositionX() { return poitionX; }
-		int getPositionY() { return poitionY; }
+ 		int getPositionX() { return positionX; }
+		int getPositionY() { return positionY; }
+ 		int getLightPositionX() { return lighPositionX; }
+		int getLightPositionY() { return lightPositionY; }
 		bool getIsAlive() { return isAlive; }
 		
 		void setHealth(int hp) { health = hp; }
 		void setOxygen(int oxy) { oxygen = oxy; }
-		void setPositionX(int x) { poitionX = x; }
-		void setPositionY(int y) { poitionY = y; }		
-
+		void setPositionX(int x) { positionX = x; }
+		void setPositionY(int y) { positionY = y; }		
+		void setLightPositionX(int x) { lighPositionX = x; }
+		void setLightPositionY(int y) { lightPositionY = y; }		
 
 	};
 
@@ -292,6 +292,7 @@ class World
 {
 	private:
 		char** map;
+		char** lightmap; 
 		int mapSize;
 		int DEFAULTDAMAGE = 10; 
 		Player player_data;
@@ -350,6 +351,55 @@ class World
 				// if 장애물 접촉 -> 넘어가는 연산 호출 (좌표 겹침) 
 
 			return canMove; 
+		}
+
+		void calculationLightRange(int x, int y)
+		{
+			if(x < 0 || x >= mapSize || y < 0 || y >= mapSize) return; 
+			
+			// int curr_x = x; 
+			// int curr_y = y; 
+
+
+			if(lightmap[y][x] == ' ') lightmap[y][x] = map[y][x]; 
+			// clalculate vision range size 
+			if(y - 1 < 0 || x - 1 <0) return;
+				if(lightmap[y][ x-1 ] == ' ') lightmap[y][x -1 ] = map[y][x-1]; // l
+				if(lightmap[y-1][x-1] == ' ') lightmap[y-1][x-1] = map[y-1][x-1]; // lu  
+				if(lightmap[y-1][x] == ' ') lightmap[y-1][x] = map[y-1][x]; // u
+			if(y+1 >= mapSize || x+1 >= mapSize) return; 
+				if(lightmap[y-1][x+1] == ' ') lightmap[y-1][x+1] = map[y-1][x+1]; // ru
+				if(lightmap[y][x+1] == ' ') lightmap[y][x+1] = map[y][x+1]; // r  
+				if(lightmap[y+1][x+1] == ' ') lightmap[y+1][x+1] = map[y+1][x+1]; // rd
+				if(lightmap[y][x+1] == ' ') lightmap[y+1][x] = map[y+1][x]; // d  
+				if(lightmap[y+1][x-1] == ' ') lightmap[y+1][x-1] = map[y+1][x-1]; // ld
+		}
+
+		void initialLightMap()
+		{
+			if(map == nullptr) return; 
+			if(mapSize == 0 || mapSize < 0) return; 
+			
+			int initialX = player_data.getPositionX();
+			int initialY = player_data.getPositionY();
+			// int range; default는 1이라고 생각
+			if(initialX == 0 && initialY == 0) return; 
+
+			for(int i = 0; i < mapSize; i++)
+			{
+				if(i == 0){lightmap = new char*[mapSize];}
+				lightmap[i] = new char[mapSize]; 
+				for(int j = 0; j < mapSize; j++)
+				{
+					lightmap[i][j] = ' '; 
+				}
+			}
+
+			lightmap[initialY][initialX] = 'p'; 
+			player_data.setLightPositionX(initialX); 
+			player_data.setLightPositionY(initialY); 
+			calculationLightRange(initialX, initialY); 
+
 		}
 
 	public:
@@ -452,6 +502,8 @@ class World
 			fclose(file); 
 			cout << "Map Load Complete" << endl; 
 
+			initialLightMap(); 
+
 			return; 
 		}
 
@@ -460,10 +512,13 @@ class World
 			for(int i =0; i < mapSize; i++) 
 			{
 				delete[] map[i]; 
+				delete[] lightmap[i]; 
 			}
 
 			delete[] map; 
+			delete[] lightmap; 
 			map = nullptr; 
+			lightmap = nullptr; 
 			mapSize = 0; 
 		}
 
@@ -509,7 +564,8 @@ class World
 			{
 				for(int x =0; x < mapSize; x++)
 				{
-					cout << map[y][x] << " " ;  
+					// cout << map[y][x] << " " ;  
+					cout << lightmap[y][x] << " "; 
 				}
 				cout << endl; 
 			}
@@ -545,12 +601,42 @@ class World
 			if(checkPlayerMove && checkPlayerState) 
 			{
 				swap(map[curr_y][curr_x], map[next_y][next_x]); 
- 
+				swap(lightmap[curr_y][curr_x], lightmap[next_y][next_x]); 
+
 				player_data.setPositionX(next_x); 
 				player_data.setPositionY(next_y);
+
+				// if player move vision position also automatically cange 
+				player_data.setLightPositionX(next_x); 
+				player_data.setLightPositionY(next_y); 
+				calculationLightRange(next_x, next_y); 
 	  
 			}
 
+			return; 
+		}
+
+		void LightMove(int input_x, int input_y)
+		{
+			// step 1. 현재 light 좌표 가지고 와야함 (player)
+			int next_lightX = player_data.getLightPositionX() + input_x; 
+			int next_lightY = player_data.getLightPositionY() + input_y; 
+			if(next_lightX < 0 || next_lightX >= mapSize) return; 
+			if(next_lightY < 0 || next_lightY >= mapSize) return; 
+
+			player_data.setLightPositionX(next_lightX); 
+			player_data.setLightPositionY(next_lightY); 
+
+			// int range = player_data.getLightRange; 
+			// vector<vector<int>> LightContainer(mapSize); 
+			
+			// step 2. 입력만큼 이동 
+			// 이동좌표 연산 함수() 
+			// 이동좌표 유효범위 연산() 
+			// 기존 container에 포함 중복여부 확인 / container에 문자 삽입
+			calculationLightRange(next_lightX, next_lightY); 
+
+			// render 호출 연결
 			return; 
 		}
 
@@ -587,6 +673,7 @@ class World
 				if(!checkPosition(nextX, nextY)) continue; 
 
 				swap(map[oldY][oldX], map[nextY][nextX]); 
+
 				movingEnemy->move(); 
 
 			}
@@ -616,6 +703,17 @@ class World
 			if(playerX == enemyX && playerY == enemyY) collide = true; 
 
 			return collide; 
+		}
+
+		void updateCurrentState()
+		{
+		   for(int i = 0;  i < mapSize; i++)
+		   {
+				for(int j =0; j < mapSize; j++)
+				{
+					if(lightmap[i][j] != ' '){lightmap[i][j] = map[i][j];}
+				}
+		   }
 		}
 
 		int getMapSize() { return mapSize; }
@@ -665,6 +763,10 @@ class ControlManager
 				if(input == 'd' || input =='D') playerMove(1, 0); 
 
 				// player light 
+				if(input == 'i' || input =='I') LightMove(0, -1); 
+				if(input == 'j' || input =='J') LightMove(-1, 0); 
+				if(input == 'k' || input =='K') LightMove(0, 1); 
+				if(input == 'l' || input =='L') LightMove(1, 0); 
 
 			}
 
@@ -676,10 +778,17 @@ class ControlManager
 			game.playerMove(x, y); 
 		} 
 
+		void LightMove(int x, int y)
+		{
+			game.LightMove(x, y); 
+		} 
+
 		void stateUpdate()
 		{
 			game.enemyMove(); 
+			game.updateCurrentState(); 
 			game.render_screen(); 
+
 		} 
 
 		void restart()
