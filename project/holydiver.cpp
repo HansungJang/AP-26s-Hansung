@@ -126,6 +126,7 @@ class Player
 		int health;
 		int oxygen;
 		int lives; // 필요없으면 hp로 
+		int lightcount; 
 		int positionX;
 		int positionY;
 		int lighPositionX;
@@ -135,8 +136,8 @@ class Player
 
 
 	public:
-		Player(int hp, int oxy, int live, int x=0, int y=0) // constructor : initialize player data
-		: health(hp), oxygen(oxy), lives(live), positionX(x), positionY(y), lighPositionX(0), lightPositionY(0), isAlive(true){}
+		Player(int hp, int oxy, int live, int lightcount, int x=0, int y=0) // constructor : initialize player data
+		: health(hp), oxygen(oxy), lives(live), lightcount(lightcount), positionX(x), positionY(y), lighPositionX(0), lightPositionY(0), isAlive(true){}
 		
 
 		void oxyzenCalculator(int oxy = -1) // calculate oxygen level
@@ -194,6 +195,7 @@ class Player
 		// setter / getter functions: health, oxygen, lives, positionX, positionY, isAlive	
 		int getHealth(){ return health; }
 		int getOxygen() {return oxygen; }
+		int getLightCount() {return lightcount;}
  		int getPositionX() { return positionX; }
 		int getPositionY() { return positionY; }
  		int getLightPositionX() { return lighPositionX; }
@@ -202,6 +204,7 @@ class Player
 		
 		void setHealth(int hp) { health = hp; }
 		void setOxygen(int oxy) { oxygen = oxy; }
+		void setLightCount(int light) {lightcount = light;}
 		void setPositionX(int x) { positionX = x; }
 		void setPositionY(int y) { positionY = y; }		
 		void setLightPositionX(int x) { lighPositionX = x; }
@@ -295,6 +298,7 @@ class World
 		char** lightmap; 
 		int mapSize;
 		int DEFAULTDAMAGE = 10; 
+		int DEFAULTLIGHTCOUNT = 5; 
 		Player player_data;
 		vector<unique_ptr<Enemy>> enemyContainer; 
 
@@ -403,7 +407,7 @@ class World
 		}
 
 	public:
-		World(string file) : player_data(MAX_HEALTH, MAX_OXYGEN, INIT_LIVES), mapSize(0), map(nullptr), isRestart(false)
+		World(string file) : player_data(MAX_HEALTH, MAX_OXYGEN, INIT_LIVES, DEFAULTLIGHTCOUNT), mapSize(0), map(nullptr), isRestart(false)
 		{
 			start_splash_screen(); 
 			enemyContainer.clear(); 
@@ -571,7 +575,7 @@ class World
 			}
 			cout << endl; 
 			cout << "*******  PLAYER STATUS *******" << endl;
-			cout << "Health : " << player_data.getHealth() << ", " << "Oxygen : " << player_data.getOxygen() << endl; 
+			cout << "Health : " << player_data.getHealth() << ", " << "Oxygen : " << player_data.getOxygen() <<  ", " << "Light Count : " << player_data.getLightCount() << endl; 
 			// player lives 는 나중에 추가 (아마 game over 횟수에 들어가겠지)
 
 		}
@@ -618,6 +622,11 @@ class World
 
 		void LightMove(int input_x, int input_y)
 		{
+			int curr_count = player_data.getLightCount(); 
+			if(curr_count <= 0) return; 
+			curr_count-= 1; 
+			player_data.setLightCount(curr_count);
+
 			// step 1. 현재 light 좌표 가지고 와야함 (player)
 			int next_lightX = player_data.getLightPositionX() + input_x; 
 			int next_lightY = player_data.getLightPositionY() + input_y; 
