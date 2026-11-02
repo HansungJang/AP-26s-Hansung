@@ -14,7 +14,6 @@ using namespace std;
 
 #include <vector>
 #include <memory>
-#include <algorithm>
 #include <ctime>
 
 /****************************************************/
@@ -70,53 +69,8 @@ const int INIT_LIVES = 3;
  ****************************************************/
 
 /*
-Task To Do  [~27.10.2026.]
+Task To Do  [~03.11.2026.]
 
-player 
- - 보이는 좌표 크기 좌표 연산 
- - container 가지고 있어야함 
- - vision count변수 크기 가지고 있어야함
-
- world 
-  - vision map 초기화 
-  - vision map의 위치 유효성 검사 및 좌표 저장 
-  - vision map render시 player vision map 그리도록 수정 
-
-control manager
- - 입력 (i,j,k,l) -> world의 연산 호출
-		
-	#scan 하는 함수 
-
-		i,j,k,l 입력 
-		>> 보이는 범위 크기 8 (8방향 연산) 
-			default size : 1 (추후 업그레이드, 우선 size : 1)	
-		
-			초기화 : 
-			- container생성 및 초기화 (map 만들때 그만큼 크기, 단 contents player 포지션, 1만큼만 저장, 나머지 ' ' 값을 넣음)
-			
-			좌표 유효성 검사 : 
-			continue 넘길 요소
-			- 해당 좌표 index < 0  || index >= mapsize
-			- 기존 맵에서 존재하는 좌표인가 && 이미 container에 존재하는 좌표인가
-
-			유효성 통과 -> 해당 좌표 배열에 map의 값 넣음 
-
-			scan 사용횟수 -=1; 
-			모두 그려졌으면 render함수 trigger되어야함
-		
- 			(-1, 0)
-				(-1, -1) 
-			(0, -1)
-				(1, -1) 
-			(1, 0)
-				(1, 1) 
-			(0, 1)
-				(-1, 1) 
-		
-		>> 시작위치 (x, y)
-		>> 보이는 tile (중복저장하지 않고 담아야함)
-		>> 한번 움직일 때마다 oxygen 처럼 사용횟수 감소시켜야함
- 
 */
 
 
@@ -126,6 +80,7 @@ class Player
 		int health;
 		int oxygen;
 		int lives; // 필요없으면 hp로 
+		int initialLightCount;
 		int lightcount; 
 		int positionX;
 		int positionY;
@@ -133,11 +88,9 @@ class Player
 		int lightPositionY;
 		bool isAlive; // player state alive or dead
 
-
-
 	public:
-		Player(int hp, int oxy, int live, int lightcount, int x=0, int y=0) // constructor : initialize player data
-		: health(hp), oxygen(oxy), lives(live), lightcount(lightcount), positionX(x), positionY(y), lighPositionX(0), lightPositionY(0), isAlive(true){}
+		Player(int hp, int oxy, int live, int lightcount, int x=-1, int y=-1) // constructor : initialize player data
+		: health(hp), oxygen(oxy), lives(live), initialLightCount(lightcount), lightcount(lightcount), positionX(x), positionY(y), lighPositionX(x), lightPositionY(y), isAlive(true){}
 		
 
 		void oxyzenCalculator(int oxy = -1) // calculate oxygen level
@@ -187,6 +140,7 @@ class Player
 		{
 			health = MAX_HEALTH; 
 			oxygen = MAX_OXYGEN; 
+			lightcount = initialLightCount;
 			setPositionX(0); 
 			setPositionY(0); 
 			playerStateChange(); 
@@ -202,8 +156,6 @@ class Player
 		int getLightPositionY() { return lightPositionY; }
 		bool getIsAlive() { return isAlive; }
 		
-		void setHealth(int hp) { health = hp; }
-		void setOxygen(int oxy) { oxygen = oxy; }
 		void setLightCount(int light) {lightcount = light;}
 		void setPositionX(int x) { positionX = x; }
 		void setPositionY(int y) { positionY = y; }		
@@ -227,9 +179,9 @@ class Enemy
 		}; 
 		virtual int givedamage(){return damage;};
 		virtual int getPositionX(){return positionX;};
-		virtual int getPositiony(){return positionY;};
-		virtual void setpositionX(int x) {positionX = x;};
-		virtual void setpositiony(int y) {positionY = y;};
+		virtual int getPositionY(){return positionY;};
+		virtual void setPositionX(int x) {positionX = x;};
+		virtual void setPositionY(int y) {positionY = y;};
 		virtual void setDamage(int dg) {damage = dg;}; 
 
 		virtual ~Enemy() = default;
@@ -245,8 +197,8 @@ class MoveableEnemy : public Enemy
 	MoveableEnemy (int dg, int x, int y) 
 	{
 		this->setDamage(dg); 
-		this->setpositionX(x); 
-		this->setpositiony(y); 
+		this->setPositionX(x); 
+		this->setPositionY(y); 
 		nextPosX= x; 
 		nextPosY= y; 
 	}; 
@@ -255,26 +207,26 @@ class MoveableEnemy : public Enemy
 	int randomDirection(){return rand() %4; }; // 0~3 시간별 임의값 random [0: u, 1: l, 2: d, 3: r],  time 단위 update 
 	void nextPos(int nextDir)
 	{
-		nextPosX = getPositionX();
-		nextPosY = getPositiony();
+		nextPosX = this->getPositionX();
+		nextPosY = this->getPositionY();
 
 		switch (nextDir)
 		{
-			case 0: --nextPosY; break; // 위
-			case 1: --nextPosX; break; // 왼쪽
-			case 2: ++nextPosY; break; // 아래
-			case 3: ++nextPosX; break; // 오른쪽
+			case 0: --nextPosY; break; // up
+			case 1: --nextPosX; break; // leaft
+			case 2: ++nextPosY; break; // down
+			case 3: ++nextPosX; break; // right
 			default: break;
 		}
 	};  // randomDirection() 실행 방향 current position에 연산, next좌표 만듬
 	void move()
 	{
-		this->setpositionX(nextPosX); 
-		this->setpositiony(nextPosY);
+		this->setPositionX(nextPosX); 
+		this->setPositionY(nextPosY);
 	}; // update position positionX = nextposX, positionY = nextposY
 
-	int getnextPosx(){return nextPosX;};
-	int getnextPosy(){return nextPosY;};
+	int getNextPosX(){return nextPosX;};
+	int getNextPosY(){return nextPosY;};
 
 }; 
 
@@ -286,8 +238,8 @@ class FixedEnemy : public Enemy
 	FixedEnemy (int dg, int x, int y) 
 	{
 		this->setDamage(dg); 
-		this->setpositionX(x); 
-		this->setpositiony(y); 
+		this->setPositionX(x); 
+		this->setPositionY(y); 
 	}; 
 }; 
 
@@ -301,7 +253,6 @@ class World
 		int DEFAULTLIGHTCOUNT = 5; 
 		Player player_data;
 		vector<unique_ptr<Enemy>> enemyContainer; 
-
 
 		bool isRestart; 
 		string filepath; 
@@ -361,10 +312,6 @@ class World
 		{
 			if(x < 0 || x >= mapSize || y < 0 || y >= mapSize) return; 
 			
-			// int curr_x = x; 
-			// int curr_y = y; 
-
-
 			if(lightmap[y][x] == ' ') lightmap[y][x] = map[y][x]; 
 			// clalculate vision range size 
 			if(y - 1 < 0 || x - 1 <0) return;
@@ -382,12 +329,12 @@ class World
 		void initialLightMap()
 		{
 			if(map == nullptr) return; 
-			if(mapSize == 0 || mapSize < 0) return; 
+			if(mapSize <= 0 ) return; 
 			
 			int initialX = player_data.getPositionX();
 			int initialY = player_data.getPositionY();
 			// int range; default는 1이라고 생각
-			if(initialX == 0 && initialY == 0) return; 
+			if(initialX < 0 || initialY < 0) return; 
 
 			for(int i = 0; i < mapSize; i++)
 			{
@@ -544,8 +491,19 @@ class World
 			if(input == 'n' || input == 'N') return; 
 			isRestart = true; 
 			cin.ignore();
-			mapDelete();
 
+
+			mapDelete();
+			enemyContainer.clear(); 
+			player_data.playerReset();
+			load_level(); 
+		}
+
+		void filePathChange(string newFile)
+		{
+			this->filepath = newFile; 
+			
+			mapDelete();
 			enemyContainer.clear(); 
 			player_data.playerReset();
 			load_level(); 
@@ -581,7 +539,6 @@ class World
 		}
 
 
-
 		void playerMove(int input_x, int input_y)
 		{
 			int curr_x = player_data.getPositionX(); 
@@ -591,7 +548,7 @@ class World
 
 			bool checkPlayerMove = checkPosition(next_x, next_y); 
 			bool checkPlayerState = player_data.getIsAlive(); 
-			if(!checkPlayerState) return; 
+			if(!checkPlayerState || !checkPlayerMove) return; 
 
 			player_data.oxyzenCalculator();
 			checkPlayerState = player_data.getIsAlive();
@@ -634,18 +591,10 @@ class World
 			if(next_lightY < 0 || next_lightY >= mapSize) return; 
 
 			player_data.setLightPositionX(next_lightX); 
-			player_data.setLightPositionY(next_lightY); 
-
-			// int range = player_data.getLightRange; 
-			// vector<vector<int>> LightContainer(mapSize); 
+			player_data.setLightPositionY(next_lightY);  
 			
 			// step 2. 입력만큼 이동 
-			// 이동좌표 연산 함수() 
-			// 이동좌표 유효범위 연산() 
-			// 기존 container에 포함 중복여부 확인 / container에 문자 삽입
 			calculationLightRange(next_lightX, next_lightY); 
-
-			// render 호출 연결
 			return; 
 		}
 
@@ -664,9 +613,9 @@ class World
 				movingEnemy->nextPos(nextdir); 
 
 				const int oldX = movingEnemy->getPositionX(); 
-				const int oldY = movingEnemy->getPositiony(); 
-				int nextX = movingEnemy->getnextPosx(); 
-				int nextY = movingEnemy->getnextPosy(); 
+				const int oldY = movingEnemy->getPositionY(); 
+				int nextX = movingEnemy->getNextPosX(); 
+				int nextY = movingEnemy->getNextPosY(); 
 				int playerX = player_data.getPositionX(); 
 				int playerY = player_data.getPositionY();
 				
@@ -694,7 +643,7 @@ class World
 			for(const auto& enemy : enemyContainer)
 			{
 				int enemyPosX = enemy->getPositionX();
-				int enemyPosY = enemy->getPositiony();
+				int enemyPosY = enemy->getPositionY();
 
 				if(x == enemyPosX && y == enemyPosY) 
 				{
@@ -740,8 +689,9 @@ class ControlManager
 		bool playingState; 
 
 	public : 
-		ControlManager(string filename) : game(filename), file(filename), playingState(true)
+		ControlManager(string filename = "Map2.txt") : game(filename), file(filename), playingState(true)
 		{
+			setFilePath(); 
 			game.render_screen(); 
 		};
 
@@ -792,6 +742,16 @@ class ControlManager
 			game.LightMove(x, y); 
 		} 
 
+		void setFilePath()
+		{
+			string filepath; 
+			cout << "Insert File path (defalut : Map2.txt): "; 
+
+			if (!getline(cin, filepath) || filepath == "Map2.txt" || filepath == "map2.txt" || filepath.empty()) return;
+			file = filepath;
+			game.filePathChange(file);
+		}
+
 		void stateUpdate()
 		{
 			game.enemyMove(); 
@@ -799,6 +759,16 @@ class ControlManager
 			game.render_screen(); 
 
 		} 
+
+		void run()
+		{
+			while(true)
+			{
+				read_input(); 
+				if(!playingState) break; 
+				stateUpdate(); 
+			}
+		}
 
 		void restart()
 		{
@@ -836,19 +806,8 @@ int main (void)
 {
     srand(time(0)); // for random move generate seed value; 
 
-	string filepath; 
-	cout << "Insert File path (defalut : Map2.txt): "; 
-
-	if (!getline(cin, filepath)) return 0;
-	if (filepath.empty()) filepath = "Map2.txt";
-	ControlManager controller(filepath); 
-
-	while(true)
-	{
-		controller.read_input();
-		if(!controller.getPlayingState()) break; 
-		controller.stateUpdate(); 
-	}
+	ControlManager controller; 
+	controller.run();
 
 	return 0; 
 
