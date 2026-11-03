@@ -312,6 +312,9 @@ class World
 			return canMove; 
 		}
 
+
+
+
 		void calculationLightRange(int x, int y)
 		{
 			if(x < 0 || x >= mapSize || y < 0 || y >= mapSize) return; 
@@ -371,6 +374,12 @@ class World
 			calculationLightRange(initialX, initialY); 
 			checkEnemystate();
 
+		}
+
+		bool inBounds(int x, int y) const
+		{
+			return x >= 0 && x < mapSize &&
+				y >= 0 && y < mapSize;
 		}
 
 		Enemy* findEnemy(int x, int y)
@@ -583,12 +592,22 @@ class World
 			Enemy* enemy; 
 
 			if(!checkPlayerState) return; 
+			if(map == nullptr || lightmap == nullptr) return;
 
 			player_data.oxyzenCalculator(); // 이동 가능 여부 상관없이 이동 시도 많으로 산소 소비 발생해야 함.
 			checkPlayerState = player_data.getIsAlive();
 
+			if(!checkPlayerState) return;
+			if(!inBounds(next_x, next_y)) return;
+
+
+			char target = map[next_y][next_x];
+
+			if (target == 'x' || target == 'X') return;
+
+
 			// if enemy 충돌 -> damage 연산 호출 (player가 이동한 경우)
-			if(map[next_y][next_x] == 'm' || map[next_y][next_x] == 'M') 
+			if(target == 'm' || target == 'M') 
 			{
 				player_data.takeDamage(findDamage(next_x, next_y)); 
 				enemy = findEnemy(next_x, next_y);
@@ -647,7 +666,7 @@ class World
 			{
 				auto* movingEnemy = dynamic_cast<MoveableEnemy*>(enemy.get()); // type identify 
 				if(movingEnemy == nullptr) continue; 
-				if(movingEnemy->getMoveActive()) continue; // 발견 안된 enemy는 이동하지 않음
+				if(!movingEnemy->getMoveActive()) continue; // 발견 안된 enemy는 이동하지 않음
 
 				int nextdir = movingEnemy->randomDirection(); 
 				movingEnemy->nextPos(nextdir); 
