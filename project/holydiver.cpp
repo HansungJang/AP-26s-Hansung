@@ -329,8 +329,9 @@ class World
 				if(lightmap[y-1][x+1] == ' ') lightmap[y-1][x+1] = map[y-1][x+1]; // ru
 				if(lightmap[y][x+1] == ' ') lightmap[y][x+1] = map[y][x+1]; // r  
 				if(lightmap[y+1][x+1] == ' ') lightmap[y+1][x+1] = map[y+1][x+1]; // rd
-				if(lightmap[y][x+1] == ' ') lightmap[y+1][x] = map[y+1][x]; // d  
+				if(lightmap[y+1][x] == ' ') lightmap[y+1][x] = map[y+1][x]; // d  
 				if(lightmap[y+1][x-1] == ' ') lightmap[y+1][x-1] = map[y+1][x-1]; // ld
+
 		}
 
 		void checkEnemystate()
@@ -590,6 +591,8 @@ class World
 			bool checkPlayerState = player_data.getIsAlive(); 
 
 			Enemy* enemy; 
+			char target = map[next_y][next_x];
+
 
 			if(!checkPlayerState) return; 
 			if(map == nullptr || lightmap == nullptr) return;
@@ -600,12 +603,7 @@ class World
 			if(!checkPlayerState) return;
 			if(!inBounds(next_x, next_y)) return;
 
-
-			char target = map[next_y][next_x];
-
 			if (target == 'x' || target == 'X') return;
-
-
 			// if enemy 충돌 -> damage 연산 호출 (player가 이동한 경우)
 			if(target == 'm' || target == 'M') 
 			{
@@ -678,16 +676,18 @@ class World
 				int playerX = player_data.getPositionX(); 
 				int playerY = player_data.getPositionY();
 				
-			
+				if(!inBounds(nextX, nextY)) continue;
+				if(findEnemy(nextX, nextY) != nullptr) continue; // 다른 enemy와 충돌여부
+ 				if(!checkPosition(nextX, nextY)) continue; // 이동가능 여부 
+
 				// player와 충돌여부 
 				if(checkCollideEnemy(playerX, playerY, nextX, nextY))
 				   {
 						player_data.takeDamage(movingEnemy->givedamage());
+						if (!player_data.getIsAlive()) return; 
 						continue;
 				   }
 
-				// 이동가능 여부 
-				if(!checkPosition(nextX, nextY)) continue; 
 
 				swap(map[oldY][oldX], map[nextY][nextX]); 
 
