@@ -411,8 +411,9 @@ class World
 			cout << "Enter commands and enjoy! (press q to quit at all times)"<<endl<<endl;
  		}
 
-		void load_level() // a routine to load a level map from a file
+		bool load_level() // a routine to load a level map from a file
 		{
+
 			// Implementation for loading level
 			FILE* file = NULL;
 			const char* filename = this->filepath.c_str(); 
@@ -424,10 +425,10 @@ class World
 
 			file = fopen(filename, "r"); 
 
-			if(file == NULL) 
+			if(file == NULL || file == nullptr) 
 			{
 				cout << "File Path Somthing Wrong ... (Check file path)" << endl; 
-				return; 
+				return false; 
 			}
 
 
@@ -447,7 +448,7 @@ class World
 					if(curr_charater_size != mapSize) 
 					{
 						cout << "Map data is un-unify ... (check file map)" << endl; 
-						return;
+						return false;
 					}
 				
 					map[currLength]  = new char[mapSize + 1]; 
@@ -497,7 +498,7 @@ class World
 
 			initialLightMap(); 
 
-			return; 
+			return true; 
 		}
 
 		void mapDelete() 
@@ -538,7 +539,11 @@ class World
 			mapDelete();
 			enemyContainer.clear(); 
 			player_data.playerReset();
-			load_level(); 
+			if(!load_level()) 
+			{
+				cout << "Map Load Fail ... " << endl; 
+				exit(1);
+			}
 		}
 
 		void filePathChange(string newFile)
@@ -548,7 +553,11 @@ class World
 			mapDelete();
 			enemyContainer.clear(); 
 			player_data.playerReset();
-			load_level(); 
+			if(!load_level()) 
+			{
+				cout << "Map Load Fail ... " << endl; 
+				exit(1);
+			}		
 		}
 
 		void render_screen(void)
