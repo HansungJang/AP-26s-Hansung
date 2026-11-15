@@ -19,16 +19,16 @@
 					enemyContainer.push_back(make_unique<FixedEnemy>(DEFAULTDAMAGE, x, y));
 			}
 
-			// item
-			if(character == 'l' || character == 'L')
-			{
-				itemContainer.push_back(make_unique<Battery>(x, y));
-			}
+			// // item
+			// if(character == 'l' || character == 'L')
+			// {
+			// 	itemContainer.push_back(make_unique<Battery>(x, y));
+			// }
 
-			if(character == 'a' || character == 'A')
-			{
-				itemContainer.push_back(make_unique<Oxygen>(x, y));
-			}
+			// if(character == 'a' || character == 'A')
+			// {
+			// 	itemContainer.push_back(make_unique<Oxygen>(x, y));
+			// }
 
 		}
 
@@ -51,8 +51,8 @@
 
 				if(map[next_y][next_x] == 'o' || map[next_y][next_x] == 'O') canMove = true; 
 				if(map[next_y][next_x] == 'm' || map[next_y][next_x] == 'M') canMove = true; 				
-				if(map[next_y][next_x] == 'l' || map[next_y][next_x] == 'L') canMove = true; 				
-				if(map[next_y][next_x] == 'a' || map[next_y][next_x] == 'A') canMove = true; 				
+				if(map[next_y][next_x] == 'l' || map[next_y][next_x] == 'L') canMove = true; // [item] light 			
+				if(map[next_y][next_x] == 'a' || map[next_y][next_x] == 'A') canMove = true; // [item] air (=oxygen) 				
 				if(map[next_y][next_x] == 'x' || map[next_y][next_x] == 'X') canMove = false; 
 
 			return canMove; 
@@ -231,16 +231,16 @@
 					checkInitialPosition('m', currString.size(), currLength);
 				}
 
-				// Item 선언 (container)
-				if(character == 'l' || character == 'L') // fixed
-				{
-					checkInitialPosition('l', currString.size(), currLength);
-				}
+				// // Item 선언 (container)
+				// if(character == 'l' || character == 'L') // fixed
+				// {
+				// 	checkInitialPosition('l', currString.size(), currLength);
+				// }
 
-				if(character == 'a' || character == 'A') // fixed
-				{
-					checkInitialPosition('a', currString.size(), currLength);
-				}
+				// if(character == 'a' || character == 'A') // fixed
+				// {
+				// 	checkInitialPosition('a', currString.size(), currLength);
+				// }
 
 				// enemycontainer에 담아야함
 
@@ -264,6 +264,45 @@
 			initialLightMap(); 
 
 			return true; 
+		}
+
+		void World::itemRandomPlace(int num)
+		{
+			// random place 
+			// step 1. use mapsize ; select random 2 position 
+			// step 2. check avilable position through map 
+			// step 3. use rand function select item type 
+			// step 4. place item int map & lightmap(if they are activated)
+			while(num > 0) 
+			{
+				int randomPosX = rand() % mapSize;
+				int randomPosY = rand() % mapSize;
+				if(map[randomPosY][randomPosX] == 'o' || map[randomPosY][randomPosX] == 'O')
+				{
+					char newItem = itemType[rand() % 2]; 
+					if(lightmap[randomPosY][randomPosX] == map[randomPosY][randomPosX]) lightmap[randomPosY][randomPosX] = newItem; 
+					map[randomPosY][randomPosX] = newItem; 
+					num--; 
+				}
+			}
+		}
+
+		void World::storeItem(char item, int posX, int posY)
+		{
+				// step1. collectible item ; itemContainer 삽입 
+				if(item == 'l' || item == 'L')
+				{
+					itemContainer.push_back(make_unique<Battery>(posX,posY));
+					lightitem++; 
+				}
+
+				if(item == 'a' || item == 'A')
+				{
+					itemContainer.push_back(make_unique<Oxygen>(posX, posY));
+					oxygenitem++; 
+				}
+
+				map[posY][posX] = lightmap[posY][posX] = 'o'; 
 		}
 
 		void World::mapDelete() 
@@ -334,8 +373,8 @@
 			{
 				for(int x =0; x < mapSize; x++)
 				{
-					// cout << map[y][x] << " " ;  
-					cout << lightmap[y][x] << " "; 
+					cout << map[y][x] << " " ;  
+					// cout << lightmap[y][x] << " "; 
 				}
 				cout << endl; 
 			}
@@ -387,15 +426,15 @@
 
 			if(target == 'l' || target == 'L' || target == 'a' || target == 'A')
 			{
-				item = findItem(next_x, next_y); 
-				if (item == nullptr){cout << "Current Item is null... " << endl;  return; }
-				if(target == 'l' || target == 'L') player_data.useItem(item->getPoint(), 'l');
-				if(target == 'a' || target == 'A') player_data.useItem(item->getPoint(), 'a');
-				useItem(next_x, next_y); 
-				eraseUsedItem(); 
+				// step1. collectible item ; itemContainer 삽입 
+				storeItem(target, next_x, next_y); 
 
-				// 저장이 되도록 수정 필요 
-			}
+				// step2. item 사용여부 물어보기 
+				cout << "Your Item is stored! " << endl; 
+				// step3. item 사용 
+				chooseItem(); 
+
+ 			}
 
 			if(checkPlayerMove && getPlayerCurrentState()) 
 			{
@@ -497,45 +536,84 @@
 			return damage;  
 		}
 
-		void World::useItem(int x, int y)
+		void World::chooseItem()
 		{
+			int input = 0;
+			char userInput; 
+			
+			if(lightitem + oxygenitem <= 0) 
+			{
+				cout << "Now your Items are all used ... sorry! " << endl; 
+				return;
+			}
+
+			cout << "You can use these Items : " << endl;
+			cout << "- #1. Light (=battery recharge) : " << lightitem << endl;
+			cout << "- #2. Air (=oxygen recharge) : " << oxygenitem << endl << endl;
+
+			cout << "Insert your itemtype ( back: 0, Light: 1, Oxygen: 2 ): ";
+			cin >> input;
+			cin.ignore();
+
+			switch(input)
+			{
+			case 0:
+				return;
+			case 1:
+				useItem('l');
+				lightitem--; 
+				return;
+			case 2:
+				useItem('a');
+				oxygenitem--;
+				return;
+			default:
+				cout << "Invalid item selection." << endl;
+				return;
+			}
+		}
+
+		void World::useItem(char type)
+		{
+			int itemIndex =0; 
 			for(const auto& item : itemContainer)
 			{
-				int itemPosX = item->getPositionX();
-				int itemPosY = item->getPositionY();
-				if(itemPosX == x && itemPosY == y)
-				{			
+				if(type == item->getType())
+				{
+					player_data.useItem(item->getPoint(), type);
 					item->setIsused(true); 
+					itemContainer.erase(itemContainer.begin() + itemIndex); 
 					break; 
 				}
+				itemIndex++; 
 			}
 		}
 
-		void World::eraseUsedItem()
-		{
-			vector<int> eraseList; 
-			int itemindex = 0; 
-			for(const auto& item : itemContainer)
-			{
-				if(item->getIsused()) 
-				{
-					int itemPosX = item->getPositionX();
-					int itemPosY = item->getPositionY();	
-					map[itemPosY][itemPosX] = 'o'; 
-					lightmap[itemPosY][itemPosX] = 'o'; 
-					eraseList.push_back(itemindex); 
-					itemindex++; 
- 					// item pop or erase 되어야함 
-				}
-			}
+		// void World::eraseUsedItem()
+		// {
+		// 	vector<int> eraseList; 
+		// 	int itemindex = 0; 
+		// 	for(const auto& item : itemContainer)
+		// 	{
+		// 		if(item->getIsused()) 
+		// 		{
+		// 			int itemPosX = item->getPositionX();
+		// 			int itemPosY = item->getPositionY();	
+		// 			map[itemPosY][itemPosX] = 'o'; 
+		// 			lightmap[itemPosY][itemPosX] = 'o'; 
+		// 			eraseList.push_back(itemindex); 
+		// 			itemindex++; 
+ 		// 			// item pop or erase 되어야함 
+		// 		}
+		// 	}
 
-			for(int i =0 ; i < eraseList.size(); i++)
-			{
-				itemContainer.erase(itemContainer.begin() + eraseList[i]); 
-			}
+		// 	for(int i =0 ; i < eraseList.size(); i++)
+		// 	{
+		// 		itemContainer.erase(itemContainer.begin() + eraseList[i]); 
+		// 	}
 
-			eraseList.clear(); 
-		}
+		// 	eraseList.clear(); 
+		// }
 
 		bool World::checkCollideEnemy(int playerX, int playerY, int enemyX, int enemyY)
 		{

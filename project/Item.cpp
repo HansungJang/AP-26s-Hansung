@@ -7,7 +7,9 @@
 			positionY = 0;
 			isCollectible = false; 
 			isUsed = false; 
+			type = 'i'; 
 		}; 
+		 char Item::getType(){return type;}
 		 int Item::getPoint(){return point;};
 		 int Item::getPositionX(){return positionX;};
 		 int Item::getPositionY(){return positionY;};
@@ -23,6 +25,7 @@
 
 	Battery::Battery(int x, int y)
 	{
+		type = 'l';
 		setPositionX(x); 
 		setPositionY(y); 
 		setCollectible(true); 
@@ -31,6 +34,7 @@
 
 	Oxygen::Oxygen(int x, int y)
 	{
+		type = 'a';
 		setPositionX(x); 
 		setPositionY(y); 
 		setCollectible(true); 

@@ -9,9 +9,11 @@ class Item
 		bool isCollectible;
 		bool isUsed; 
 	protected :  
+		char type; 
 		virtual void setPoint(int pt);   
 	public :
 		Item(); 
+		virtual char getType();
 		virtual int getPoint();
 		virtual int getPositionX(); 
         virtual int getPositionY();

@@ -23,7 +23,9 @@ class World
 		vector<unique_ptr<Enemy>> enemyContainer; 
 		// Item container 보관할 수 있어야함 
 		vector<unique_ptr<Item>> itemContainer; 
-
+		vector<char> itemType = {'l', 'a'}; 
+		int lightitem = 0; 
+		int oxygenitem = 0; 
 		bool isRestart; 
 		string filepath; 
 
@@ -48,9 +50,6 @@ class World
 		void LightMove(int input_x, int input_y);
  		void enemyMove(); 
 		int findDamage(int x, int y);
-
-		void useItem(int x, int y); 
-		void eraseUsedItem(); 
 	 
 		bool checkCollideEnemy(int playerX, int playerY, int enemyX, int enemyY);
 		void updateCurrentState(); 
@@ -58,7 +57,10 @@ class World
 		bool getPlayerCurrentState();  
 
 		// Item 호출 l: light, a : air(=oxygen)
-
-
+		void itemRandomPlace(int num); // number of item; item placed random position on the map  
+		void storeItem(char item, int posX, int posY); // store player collectible item
+		void chooseItem(); 
+		void useItem(char type); 
+		// void eraseUsedItem(); 
 
 };

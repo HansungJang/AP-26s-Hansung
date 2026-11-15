@@ -8,6 +8,7 @@ class ControlManager
 		World game; 
 		string file;
 		bool playingState; 
+		int itemNumbers = 5; 
 
 	public : 
 		ControlManager(string filename = "Map2.txt"); 

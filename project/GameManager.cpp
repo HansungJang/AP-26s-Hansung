@@ -5,6 +5,7 @@
 		ControlManager::ControlManager(string filename) : game(filename), file(filename), playingState(true)
 		{
 			setFilePath(); 
+			game.itemRandomPlace(itemNumbers); 
 			game.render_screen(); 
 		};
 
@@ -39,6 +40,9 @@
 				if(input == 'j' || input =='J') LightMove(-1, 0); 
 				if(input == 'k' || input =='K') LightMove(0, 1); 
 				if(input == 'l' || input =='L') LightMove(1, 0); 
+
+				// item use : 'U' / 'u' 
+				if(input == 'u' || input == 'U') game.chooseItem(); 
 
 			}
 
