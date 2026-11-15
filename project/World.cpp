@@ -373,8 +373,8 @@
 			{
 				for(int x =0; x < mapSize; x++)
 				{
-					cout << map[y][x] << " " ;  
-					// cout << lightmap[y][x] << " "; 
+					// cout << map[y][x] << " " ;  
+					cout << lightmap[y][x] << " "; 
 				}
 				cout << endl; 
 			}
