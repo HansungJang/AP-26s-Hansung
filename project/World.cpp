@@ -19,17 +19,6 @@
 					enemyContainer.push_back(make_unique<FixedEnemy>(DEFAULTDAMAGE, x, y));
 			}
 
-			// // item
-			// if(character == 'l' || character == 'L')
-			// {
-			// 	itemContainer.push_back(make_unique<Battery>(x, y));
-			// }
-
-			// if(character == 'a' || character == 'A')
-			// {
-			// 	itemContainer.push_back(make_unique<Oxygen>(x, y));
-			// }
-
 		}
 
 		bool World::checkPosition(int next_x, int next_y)
@@ -53,6 +42,7 @@
 				if(map[next_y][next_x] == 'm' || map[next_y][next_x] == 'M') canMove = true; 				
 				if(map[next_y][next_x] == 'l' || map[next_y][next_x] == 'L') canMove = true; // [item] light 			
 				if(map[next_y][next_x] == 'a' || map[next_y][next_x] == 'A') canMove = true; // [item] air (=oxygen) 				
+				if(map[next_y][next_x] == 'F') canMove = true; 
 				if(map[next_y][next_x] == 'x' || map[next_y][next_x] == 'X') canMove = false; 
 
 			return canMove; 
@@ -231,18 +221,6 @@
 					checkInitialPosition('m', currString.size(), currLength);
 				}
 
-				// // Item 선언 (container)
-				// if(character == 'l' || character == 'L') // fixed
-				// {
-				// 	checkInitialPosition('l', currString.size(), currLength);
-				// }
-
-				// if(character == 'a' || character == 'A') // fixed
-				// {
-				// 	checkInitialPosition('a', currString.size(), currLength);
-				// }
-
-				// enemycontainer에 담아야함
 
 				currString.push_back(character);
 				curr_charater_size += 1; 
@@ -275,8 +253,8 @@
 			// step 4. place item int map & lightmap(if they are activated)
 			while(num > 0) 
 			{
-				int randomPosX = rand() % mapSize;
-				int randomPosY = rand() % mapSize;
+				int randomPosX,  randomPosY =  0; 
+				generatoRandPos(randomPosX, randomPosY); 
 				if(map[randomPosY][randomPosX] == 'o' || map[randomPosY][randomPosX] == 'O')
 				{
 					char newItem = itemType[rand() % 2]; 
@@ -285,6 +263,26 @@
 					num--; 
 				}
 			}
+		}
+
+		void World::flagRandomPlace()
+		{
+			bool flagisPlaced = false; 
+
+			do
+			{
+				int randomPosX,  randomPosY =  0; 
+				generatoRandPos(randomPosX, randomPosY); 
+				
+				if(map[randomPosY][randomPosX] == 'o' || map[randomPosY][randomPosX] == 'O')
+				{
+					if(lightmap[randomPosY][randomPosX] == map[randomPosY][randomPosX]) lightmap[randomPosY][randomPosX] = 'F';
+					map[randomPosY][randomPosX] = 'F'; 
+					flagisPlaced = true; 
+				}
+
+			}
+			while(!flagisPlaced); 
 		}
 
 		void World::storeItem(char item, int posX, int posY)
@@ -305,6 +303,7 @@
 				map[posY][posX] = lightmap[posY][posX] = 'o'; 
 		}
 
+
 		void World::mapDelete() 
 		{
 			for(int i =0; i < mapSize; i++) 
@@ -320,6 +319,9 @@
 			mapSize = 0; 
 		}
 
+		void World::itemDelete(){itemContainer.clear();}
+		void World::enemyDelete(){ enemyContainer.clear();}
+
 		void World::gameReset()
 		{
 			char input; 
@@ -332,8 +334,8 @@
 
 
 			mapDelete();
-			enemyContainer.clear(); 
-			itemContainer.clear(); 
+			enemyDelete();
+			itemDelete();
 			player_data.playerReset();
 			if(!load_level()) 
 			{
@@ -435,6 +437,11 @@
 				chooseItem(); 
 
  			}
+
+			if(target == 'F')
+			{
+				isClearStage = true; 
+			}
 
 			if(checkPlayerMove && getPlayerCurrentState()) 
 			{
@@ -589,32 +596,6 @@
 			}
 		}
 
-		// void World::eraseUsedItem()
-		// {
-		// 	vector<int> eraseList; 
-		// 	int itemindex = 0; 
-		// 	for(const auto& item : itemContainer)
-		// 	{
-		// 		if(item->getIsused()) 
-		// 		{
-		// 			int itemPosX = item->getPositionX();
-		// 			int itemPosY = item->getPositionY();	
-		// 			map[itemPosY][itemPosX] = 'o'; 
-		// 			lightmap[itemPosY][itemPosX] = 'o'; 
-		// 			eraseList.push_back(itemindex); 
-		// 			itemindex++; 
- 		// 			// item pop or erase 되어야함 
-		// 		}
-		// 	}
-
-		// 	for(int i =0 ; i < eraseList.size(); i++)
-		// 	{
-		// 		itemContainer.erase(itemContainer.begin() + eraseList[i]); 
-		// 	}
-
-		// 	eraseList.clear(); 
-		// }
-
 		bool World::checkCollideEnemy(int playerX, int playerY, int enemyX, int enemyY)
 		{
 			bool collide = false; 
@@ -623,6 +604,30 @@
 
 			return collide; 
 		}
+
+		void World::checkstageClear()  // 스테이지 종료 확인 
+		{
+			if(isClearStage)
+			{
+				mapDelete(); 
+				enemyDelete();
+				player_data.playerReset();  
+			}
+		}
+
+		void World::stageUpgrade()
+		{
+			if(isClearStage)
+			{
+				stagelevel++; 
+				filepath = ("Map/Map{%d}.txt" , stagelevel); 
+				filePathChange(filepath); 
+ 				isClearStage = false; 
+			}
+		}
+
+		bool World::getStageClear(){return isClearStage;}
+		int  World::getCurrStagelevel(){return stagelevel;} 
 
 		void World::updateCurrentState()
 		{
@@ -638,3 +643,9 @@
 		int World::getMapSize() { return mapSize; }
 		bool World::getPlayerCurrentState() {return player_data.getIsAlive();}
 		
+		void World::generatoRandPos(int& posX, int& posY)
+		{
+			posX = rand() % mapSize;
+			posY = rand() % mapSize; 
+		}
+

@@ -8,10 +8,18 @@ class ControlManager
 		World game; 
 		string file;
 		bool playingState; 
-		int itemNumbers = 5; 
+		int itemNumbers = 3; // items
+		int MaxstageLevel = 5; 
+		int currStageLevel = 0; 
+
+		/*
+		To Do (~24.11.26.)
+		[] 게임 승리 조건 ; 교수님께서 아이템 모두 회수 / [내 아이디어] Flag 찾으면 다음 레벨 이동 
+		[] 게임 완료시 Map level 이동 / 단 기존 Item, 체력상태 등 Player 요소는 유지되어야 함 
+		*/
 
 	public : 
-		ControlManager(string filename = "Map2.txt"); 
+		ControlManager(string filename = "Map/Map0.txt"); 
 
 		void ControlManager::read_input();
  		
@@ -20,6 +28,11 @@ class ControlManager
 		void ControlManager::setFilePath();
 		void ControlManager::stateUpdate();
 		void ControlManager::run();
+
+		void ControlManager::checkStageClear(); // 새로운 스테이지 [아이템은 유지] / 체력, 베터리 초기화, 맵 초기화 
+		                                   // 여유가 된다면 screen 메세지, 다음스테이지 넘어갈 건지 물어보는 것 
+										   
+	   // void ControlManager::stageCompleteUI(); // Complete stage Message
 		 
 		void ControlManager::restart();
 		void ControlManager::end(); 
@@ -27,5 +40,3 @@ class ControlManager
 
 }; 
 
-// 게임 stage clear , 업데이트 기능 
-// 아이템 산소, light 기능 활용 

@@ -27,7 +27,9 @@ class World
 		int lightitem = 0; 
 		int oxygenitem = 0; 
 		bool isRestart; 
+		bool isClearStage = false; 
 		string filepath; 
+		int stagelevel = 0; 
 
 		void checkInitialPosition(char character, int x, int y); 
 		bool checkPosition(int next_x, int next_y);
@@ -43,6 +45,8 @@ class World
 		void start_splash_screen(void) ;
 		bool load_level();
  		void mapDelete(); 
+		void itemDelete(); 
+		void enemyDelete(); 
 		void gameReset();
 		void filePathChange(string newFile);
 		void render_screen(void);
@@ -61,6 +65,14 @@ class World
 		void storeItem(char item, int posX, int posY); // store player collectible item
 		void chooseItem(); 
 		void useItem(char type); 
-		// void eraseUsedItem(); 
 
+		void flagRandomPlace();  // 종료조건 배치 ; F : find flag complete stage
+		void checkstageClear();  // 스테이지 종료 확인 
+		void stageUpgrade(); 
+		bool getStageClear(); 
+		int  getCurrStagelevel(); 
+		
+		// helper function 
+		void generatoRandPos(int& posX, int& posY); 
+ 
 };

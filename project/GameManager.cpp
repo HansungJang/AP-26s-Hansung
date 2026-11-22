@@ -5,6 +5,7 @@
 		ControlManager::ControlManager(string filename) : game(filename), file(filename), playingState(true)
 		{
 			setFilePath(); 
+			game.flagRandomPlace(); 
 			game.itemRandomPlace(itemNumbers); 
 			game.render_screen(); 
 		};
@@ -62,9 +63,9 @@
 		void ControlManager::setFilePath()
 		{
 			string filepath; 
-			cout << "Insert File path (defalut : Map2.txt): "; 
+			cout << "Insert File path (defalut : Map0.txt): "; 
 
-			if (!getline(cin, filepath) || filepath == "Map2.txt" || filepath == "map2.txt" || filepath.empty()) return;
+			if (!getline(cin, filepath) || filepath == "Map/Map0.txt" || filepath == "map2.txt" || filepath.empty()) return;
 			file = filepath;
 			game.filePathChange(file);
 		}
@@ -74,7 +75,7 @@
 			game.enemyMove(); 
 			game.updateCurrentState(); 
 			game.render_screen(); 
-
+			checkStageClear(); 
 		} 
 
 		void ControlManager::run()
@@ -93,6 +94,37 @@
 			cout << endl; 
 
 			game.gameReset(); 
+		}
+
+		void ControlManager::checkStageClear()
+		{
+			if(!game.getStageClear()) return; 
+			
+
+			int input;
+			int currlevel = game.getCurrStagelevel();
+			
+			cout << endl << endl; 
+			cout << "\t Congrats You Complete Stage #" << currlevel << " \t" << endl << endl; 
+
+			cout << "\t Do You Want To Play Next Stage ? [0 : Yes, 1 : No] :";
+			cin >> input; 
+			cin.ignore();
+			
+			if(currlevel >= MaxstageLevel || input >= 1) 
+			{
+				if(currlevel >= MaxstageLevel) cout << "You complete All Stages!!" << endl; 
+				cout << "Thank You For Playing!" << endl; 
+				end(); 
+				return ; 
+			}
+
+			if(input == 0)
+			{ 
+				game.checkstageClear();
+				game.stageUpgrade(); 
+			}
+			
 		}
 
 		void ControlManager::end()
