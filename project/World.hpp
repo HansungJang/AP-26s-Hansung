@@ -71,7 +71,7 @@ class World
 		void stageUpgrade(); 
 		bool getStageClear(); 
 		int  getCurrStagelevel(); 
-		
+
 		// helper function 
 		void generatoRandPos(int& posX, int& posY); 
  

@@ -375,8 +375,8 @@
 			{
 				for(int x =0; x < mapSize; x++)
 				{
-					// cout << map[y][x] << " " ;  
-					cout << lightmap[y][x] << " "; 
+					cout << map[y][x] << " " ;  
+					// cout << lightmap[y][x] << " "; 
 				}
 				cout << endl; 
 			}
@@ -620,8 +620,7 @@
 			if(isClearStage)
 			{
 				stagelevel++; 
-				filepath = ("Map/Map{%d}.txt" , stagelevel); 
-				filePathChange(filepath); 
+				filepath = "Map/Map" + std::to_string(stagelevel) + ".txt";				filePathChange(filepath); 
  				isClearStage = false; 
 			}
 		}

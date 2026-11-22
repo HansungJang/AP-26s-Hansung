@@ -2,7 +2,7 @@
 
     Item::Item()
 		{
-			point = 0;
+			point = 3;
 			positionX = 0; 
 			positionY = 0;
 			isCollectible = false; 

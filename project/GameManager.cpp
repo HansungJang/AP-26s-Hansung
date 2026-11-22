@@ -5,7 +5,7 @@
 		ControlManager::ControlManager(string filename) : game(filename), file(filename), playingState(true)
 		{
 			setFilePath(); 
-			game.flagRandomPlace(); 
+			game.flagRandomPlace();
 			game.itemRandomPlace(itemNumbers); 
 			game.render_screen(); 
 		};
@@ -107,11 +107,13 @@
 			cout << endl << endl; 
 			cout << "\t Congrats You Complete Stage #" << currlevel << " \t" << endl << endl; 
 
-			cout << "\t Do You Want To Play Next Stage ? [0 : Yes, 1 : No] :";
+			cout << "\t Do You Want To Play Next Stage ? [0 : Yes, 1 : No]" << endl;
+			cout << ">> YOUR Answer : " ; 
 			cin >> input; 
+			cout << endl; 
 			cin.ignore();
 			
-			if(currlevel >= MaxstageLevel || input >= 1) 
+			if(currlevel+1 >= MaxstageLevel || input >= 1) 
 			{
 				if(currlevel >= MaxstageLevel) cout << "You complete All Stages!!" << endl; 
 				cout << "Thank You For Playing!" << endl; 
@@ -123,6 +125,11 @@
 			{ 
 				game.checkstageClear();
 				game.stageUpgrade(); 
+				
+				game.flagRandomPlace();
+				game.itemRandomPlace(itemNumbers); 
+				
+				game.render_screen(); 
 			}
 			
 		}

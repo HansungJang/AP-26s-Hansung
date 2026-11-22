@@ -8,9 +8,9 @@ class ControlManager
 		World game; 
 		string file;
 		bool playingState; 
-		int itemNumbers = 3; // items
-		int MaxstageLevel = 5; 
+		int MaxstageLevel = 3; 
 		int currStageLevel = 0; 
+		int itemNumbers = 3; // items
 
 		/*
 		To Do (~24.11.26.)
